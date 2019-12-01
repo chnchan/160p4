@@ -55,21 +55,25 @@ int parseHeaders(char* line, struct headerItem* headers) {
 }
 
 
-int main(int argc, char *argv[]) {
-    if (argc < 2)
-        return -1;
-
-    struct headerItem headers[MAX_LINE_LENGTH]; // or can use a linked list
+int main(int argc, char** argv) {
     int nameColumn = -1;
     char line[MAX_LINE_LENGTH];
     FILE* inf = fopen(argv[1], "r");
-    fgets(line, MAX_LINE_LENGTH, inf);
+    struct headerItem headers[MAX_LINE_LENGTH]; // or can use a linked list
 
-    if ((nameColumn = parseHeaders(line, headers)) == -1) {
-        printf("Invalid Input Format\n");
-    } else {
-        // parse body
+    if (inf == NULL)
+        printf("File does not exist\n");
+    else {
+        fgets(line, MAX_LINE_LENGTH, inf);
+
+        if ((nameColumn = parseHeaders(line, headers)) == -1) {
+            printf("Invalid Input Format\n");
+        } else {
+            // parse body
+        }
     }
+
+    return 0;
 }
 
 
