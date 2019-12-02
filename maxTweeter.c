@@ -140,6 +140,7 @@ int parseBody(char* line, struct Headers* headers /*, Map* dictionary */) {
 
             if (head == NULL) {
                 head = (struct node*)malloc(sizeof(struct node));
+                head->name = malloc(strlen(name));
                 strcpy(head->name, name);
                 head->length = 1;
                 head->next = NULL;
@@ -148,21 +149,25 @@ int parseBody(char* line, struct Headers* headers /*, Map* dictionary */) {
                 head->length += 1;
             }
             else {
-                struct node* curr = head;
+                struct node* curr = head->next;
+                struct node* prev = head;
                 int found = -1;
-                while (curr->next != NULL) {
-                    if (strcmp(curr->name, name)) {
+                while (curr != NULL) {
+                    if (strcmp(curr->name, name) == 0) {
                         curr->length += 1;
                         found = 1;
                         break;
                     }
+                    prev = curr;
                     curr = curr->next;
                 }
                 if (found == -1) {
-                    curr->next = (struct node*)malloc(sizeof(struct node));
-                    curr->next->length = 1;
-                    curr->next->next = NULL;
-                    strcpy(curr->next->name, name);
+                    curr = (struct node*)malloc(sizeof(struct node));
+                    curr->length = 1;
+                    prev->next = curr;
+                    curr->next = NULL;
+                    curr->name = malloc(strlen(name));
+                    strcpy(curr->name, name);
                 }
             }
 
@@ -218,7 +223,21 @@ int main(int argc, char** argv) {
                     printf("Invalid Input Format\n");
             }
 
-            // print result (top 10)
+
+            // struct node* headSort = NULL;
+            // struct node* currentSort = head;
+            // while (currentSort != NULL) {
+            //     struct node* nextSort = currentSort->next;
+            //     insertSort(&headSort, currentSort);
+            //     currentSort = nextSort;
+            // }
+
+            struct node* current = head;
+
+            while (current != NULL){
+                printf("name: %s | length: %d\n", current-> name, current->length);
+                current = current->next;
+            }
         }
     }
 
