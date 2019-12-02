@@ -27,6 +27,8 @@ char* substring(char* source, int start, int end) {
      */
     int i = 0;
     char* substr = malloc(end - start + 1);
+    if (substr == NULL)
+        return NULL;
 
     while (start + i < end) {
         substr[i] = source[start + i];
@@ -59,6 +61,8 @@ int parseHeaders(char* line, struct Headers* headers) {
             cont = false;
 
         token = substring(line, start, end);
+        if (token == NULL)
+            return -1;
 
         if (token[0] == '\"') {
             if (strlen(token) >= 2 && token[strlen(token) - 1] == '\"') { // id, "name", tweet
@@ -73,6 +77,9 @@ int parseHeaders(char* line, struct Headers* headers) {
             headers->quoted[index] = false;
             name = token;
         }
+
+        if (name == NULL)
+            return -1;
 
         for (int i = 0; i < index; i++) {
             if (strcmp(titles[i], name) == 0) // this header already exists
@@ -104,14 +111,14 @@ int parseBody(char* line, struct Headers* headers /*, Map* dictionary */) {
      */
      int index = 0;
      int start = 0, end = 0;
-     char* token;
-     char* name;
+     char* token = NULL;
+     char* name = NULL;
      bool cont = true;
 
      while (cont == true) {
         if (line[end] != ',' && line[end] != '\n') {
-         end += 1;
-         continue;
+            end += 1;
+            continue;
         }
 
         if (line[end] == '\n')
@@ -121,6 +128,8 @@ int parseBody(char* line, struct Headers* headers /*, Map* dictionary */) {
             return -1;
 
         token = substring(line, start, end);
+        if (token == NULL)
+            return -1;
 
         if (headers->quoted[index] == true) {
             if (strlen(token) >= 2 && token[0] == '\"' && token[strlen(token) - 1] == '\"') {
@@ -136,6 +145,9 @@ int parseBody(char* line, struct Headers* headers /*, Map* dictionary */) {
         }
 
         if (index == headers->nameColumn) {
+            if (name == NULL)
+                return -1;
+
             fprintf(stderr, "name: %s\n", name);                                        // TODO: remove me later
             struct node *curr = head, *prev = NULL;
 
@@ -153,16 +165,28 @@ int parseBody(char* line, struct Headers* headers /*, Map* dictionary */) {
             else { // no node with name found in the linked list
                 if (prev == NULL) { // head is not initialized
                     head = (struct node*)malloc(sizeof(struct node));
+                    if (head == NULL)
+                        return -1;
+
                     head->name = malloc(strlen(name));
+                    if (head->name == NULL)
+                        return -1;
+
                     strcpy(head->name, name);
                     head->length = 1;
                     head->next = NULL;
                 } else { // initialized a new tail node
                     curr = (struct node*)malloc(sizeof(struct node));
+                    if (curr == NULL)
+                        return -1;
+
                     curr->length = 1;
                     prev->next = curr;
                     curr->next = NULL;
                     curr->name = malloc(strlen(name));
+                    if (curr->name == NULL)
+                        return -1;
+
                     strcpy(curr->name, name);
                 }
             }
@@ -202,26 +226,46 @@ void insertSort(struct node** headSort, struct node* input) {
 int main(int argc, char** argv) {
     char line[MAX_LINE_LENGTH];
     FILE* inf = fopen(argv[1], "r");
-    // struct headerItem headers[MAX_LINE_LENGTH]; // or can use a linked list
     struct Headers headers;
-    // bool headers[MAX_LINE_LENGTH];
 
-    if (inf == NULL)
-        printf("File does not exist\n");
+    if (inf == NULL) {
+        printf("Invalid File / File Path\n");
+        return -1;
+    }
     else {
         fgets(line, MAX_LINE_LENGTH, inf);
 
+        if (strlen(line) >= MAX_LINE_LENGTH && line[strlen(line) - 1] != '\n') {
+            printf("Invalid Input Format: line exceeded MAX_LINE_LENGTH\n");
+            return -1;
+        }
+
         if (parseHeaders(line, &headers) == -1){
-            printf("Invalid Input Format\n");
-            return 0;
+            printf("Invalid Input Format: invalid headers\n");
+            return -1;
         }
         else {
+            int totalLines = 1;
+            bool valid = true;
             while (fgets(line, MAX_LINE_LENGTH, inf)) {
-                if (parseBody(line, &headers) == -1){
-                    printf("Invalid Input Format\n");
-                    return 0;
+                if (strlen(line) >= MAX_LINE_LENGTH && line[strlen(line) - 1] != '\n') {
+                    printf("Invalid Input Format: line exceeded MAX_LINE_LENGTH\n");
+                    return -1;
                 }
+
+                if (totalLines >= 20000) {
+                    printf("Invalid Input Format: input file exceeded 20,000 lines\n");
+                    return -1;
+                }
+
+                if (parseBody(line, &headers) == -1){
+                    printf("Invalid Input Formats: invalid content\n");
+                    return -1;
+                }
+
+                totalLines += 1;
             }
+
             int count = 0;
             struct node* headSort = NULL;
             struct node* currentSort = head;
@@ -232,9 +276,8 @@ int main(int argc, char** argv) {
             }
 
             struct node* current = headSort;
-
             while (current != NULL && count < 10){
-                printf("name: %s | length: %d\n", current-> name, current->length);
+                printf("%s: %d\n", current-> name, current->length);
                 current = current->next;
                 count += 1;
             }
@@ -243,33 +286,3 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-
-
-/* Overview:
-
-1.  store header infos (can be as many header as possible within MAX_LINE_LENGTH limit).
-    If the header item is quoted, all of items in that column needs to be quoted as well. Otherwise,
-    it is considered invalid (piazza 295).
-
-    Ex.
-    id, name, tweet is valid
-    id, name, "name", tweet is invalid
-    "MyName"" is valid and will return MyName"
-
-2.  read body without crashing (even invalid inputs). Make sure if the column header is quoted,
-    the content is also quoted.
-
-3.  write a dictionary / hash table to store each tweeter's tweet count
-
-    Ex.
-    dict["Prem"] = 1
-
-*/
-
-
-/* Test cases:
-
-id,,name,,tweet     - should be invalid
-id,,name,tweeter    - should be valid
-
-*/
