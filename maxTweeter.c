@@ -89,7 +89,6 @@ int parseHeaders(char* line, struct Headers* headers) {
         if (strcmp(name, "name") == 0)
             nameColumn = index;
 
-        fprintf(stderr, "header: %s\n", name);                                              // TODO: remove me later
         titles[index] = name;
         index += 1;
         end += 1;
@@ -148,7 +147,6 @@ int parseBody(char* line, struct Headers* headers /*, Map* dictionary */) {
             if (name == NULL)
                 return -1;
 
-            fprintf(stderr, "name: %s\n", name);                                        // TODO: remove me later
             struct node *curr = head, *prev = NULL;
 
             while (curr != NULL) {
