@@ -166,7 +166,7 @@ int parseBody(char* line, struct Headers* headers /*, Map* dictionary */) {
                     if (head == NULL)
                         return -1;
 
-                    head->name = malloc(strlen(name));
+                    head->name = malloc(strlen(name)+1);
                     if (head->name == NULL)
                         return -1;
 
@@ -181,7 +181,7 @@ int parseBody(char* line, struct Headers* headers /*, Map* dictionary */) {
                     curr->length = 1;
                     prev->next = curr;
                     curr->next = NULL;
-                    curr->name = malloc(strlen(name));
+                    curr->name = malloc(strlen(name)+1);
                     if (curr->name == NULL)
                         return -1;
 
@@ -222,6 +222,10 @@ void insertSort(struct node** headSort, struct node* input) {
 
 
 int main(int argc, char** argv) {
+    if (argc != 2) {
+        printf("Invalid Input.\n");
+        return 0;
+    }
     char line[MAX_LINE_LENGTH];
     FILE* inf = fopen(argv[1], "r");
     struct Headers headers;
@@ -281,6 +285,6 @@ int main(int argc, char** argv) {
             }
         }
     }
-
+    fclose(inf);
     return 0;
 }
