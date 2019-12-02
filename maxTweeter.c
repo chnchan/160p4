@@ -138,7 +138,7 @@ int parseBody(char* line, struct Headers* headers /*, Map* dictionary */) {
         start = end;
     }
 
-    if (index != headers->size - 1) // less columns than headers
+    if (index != headers->size) // less columns than headers
         return -1;
 
     return 0;
