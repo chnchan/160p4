@@ -12,6 +12,14 @@ struct Headers {
     int size, nameColumn;
 };
 
+struct node* head = NULL;
+
+struct node {
+    char* name;
+    int length;
+    struct node* next;
+};
+
 
 char* substring(char* source, int start, int end) {
     /*
@@ -129,7 +137,35 @@ int parseBody(char* line, struct Headers* headers /*, Map* dictionary */) {
 
         if (index == headers->nameColumn) {
             fprintf(stderr, "name: %s\n", name);                                        // TODO: remove me later
-            // dictionary[name] += 1;
+
+            if (head == NULL) {
+                head = (struct node*)malloc(sizeof(struct node));
+                strcpy(head->name, name);
+                head->length = 1;
+                head->next = NULL;
+            }
+            else if (strcmp(head->name, name) == 0) {
+                head->length += 1;
+            }
+            else {
+                struct node* curr = head;
+                int found = -1;
+                while (curr->next != NULL) {
+                    if (strcmp(curr->name, name)) {
+                        curr->length += 1;
+                        found = 1;
+                        break;
+                    }
+                    curr = curr->next;
+                }
+                if (found == -1) {
+                    curr->next = (struct node*)malloc(sizeof(struct node));
+                    curr->next->length = 1;
+                    curr->next->next = NULL;
+                    strcpy(curr->next->name, name);
+                }
+            }
+
             free(name);
         }
 
@@ -142,6 +178,23 @@ int parseBody(char* line, struct Headers* headers /*, Map* dictionary */) {
         return -1;
 
     return 0;
+}
+
+
+void insertSort(struct node** headSort, struct node* input) {
+    struct node* curr;
+    if (*headSort == NULL || (*headSort)->length <= input->length) {
+        input->next = *headSort;
+        *headSort = input;
+    }
+    else {
+        curr = *headSort;
+        while(curr->next!=NULL && curr->next->length>input->length){
+            curr = curr->next;
+        }
+        input->next = curr->next;
+        curr->next = input;
+    }
 }
 
 
