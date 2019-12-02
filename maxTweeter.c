@@ -12,86 +12,130 @@ struct Headers {
     int size, nameColumn;
 };
 
+
+char* substring(char* source, int start, int end) {
+    /*
+     *  Creates a substring from start to end (digit at end not included).
+     */
+    int i = 0;
+    char* substr = malloc(end - start + 1);
+
+    while (start + i < end) {
+        substr[i] = source[start + i];
+        i += 1;
+    }
+
+    substr[i] = '\0';
+    return substr;
+}
+
+
 int parseHeaders(char* line, struct Headers* headers) {
     /*
      *  Parse 1st line in the csv. Return -1 if invalid header is recieved.
      */
-
     int index = 0, nameColumn = -1;
+    int start = 0, end = 0;
+    bool cont = true;
+    char* token;
+    char* name;
     char* titles[MAX_LINE_LENGTH];
-    char* token = strtok(line, ",");
 
-    while (token) {
-        if (token[strlen(token) - 1] == '\n') // remove newline from the last header item
-            token[strlen(token) - 1] = '\0';
-
-        for (int i = 0; i < index; i++) {
-            if (strcmp(titles[i], token) == 0) // this header already exists
-                return -1;
+    while (cont == true) {
+        if (line[end] != ',' && line[end] != '\n') {
+            end += 1;
+            continue;
         }
+
+        if (line[end] == '\n')
+            cont = false;
+
+        token = substring(line, start, end);
 
         if (token[0] == '\"') {
             if (strlen(token) >= 2 && token[strlen(token) - 1] == '\"') { // id, "name", tweet
                 headers->quoted[index] = true;
-                titles[index] = malloc(strlen(token) - 1);
-                strncpy(titles[index], token + 1, strlen(token) - 2);
+                name = substring(token, 1, strlen(token) - 1);
+                free(token);
             } else // id,",tweet || id, "name, tweet
                 return -1;
         } else if (token[strlen(token) - 1] == '\"') { // id, name", tweet
             return -1;
         } else { // id, name, tweet
             headers->quoted[index] = false;
-            titles[index] = malloc(strlen(token) - 1);
-            strcpy(titles[index], token);
+            name = token;
         }
 
-        fprintf(stderr, "name: %s\n", titles[index]);             // TODO: remove me later
-        if (strcmp(titles[index], "name") == 0)
-            headers->nameColumn = index;
+        for (int i = 0; i < index; i++) {
+            if (strcmp(titles[i], name) == 0) // this header already exists
+                return -1;
+        }
 
+        if (strcmp(name, "name") == 0)
+            nameColumn = index;
+
+        fprintf(stderr, "header: %s\n", name);                                              // TODO: remove me later
+        titles[index] = name;
         index += 1;
-        token = strtok(NULL, ",");
+        end += 1;
+        start = end;
     }
 
     for (int i = 0; i < index; i++)
         free(titles[i]);
 
     headers->size = index;
-    return 0;
+    headers->nameColumn = nameColumn;
+    return nameColumn;
 }
+
 
 int parseBody(char* line, struct Headers* headers /*, Map* dictionary */) {
     /*
      *  Parse body of the csv. Return -1 if invalid body is recieved (header is quoted, but body is not etc.).
      */
+     int index = 0;
+     int start = 0, end = 0;
+     char* token;
+     char* name;
+     bool cont = true;
 
-    int index = 0;
-    char* token = strtok(line, ",");
+     while (cont == true) {
+        if (line[end] != ',' && line[end] != '\n') {
+         end += 1;
+         continue;
+        }
 
-    while (token) {
+        if (line[end] == '\n')
+            cont = false;
+
         if (index > headers->size - 1) // more columns than headers
             return -1;
 
-        if (token[strlen(token) - 1] == '\n') // remove newline from the last header item
-            token[strlen(token) - 1] = '\0';
+        token = substring(line, start, end);
 
         if (headers->quoted[index] == true) {
             if (strlen(token) >= 2 && token[0] == '\"' && token[strlen(token) - 1] == '\"') {
                 if (index == headers->nameColumn) {
-                    char* name = malloc(strlen(token) - 1);
-                    strncpy(name, token + 1, strlen(token) - 2);
-                    // dictionary[substring] += 1;
+                    name = substring(token, 1, strlen(token) - 1);
+                    free(token);
                 }
             } else
                 return -1;
         } else {
-            if (index == headers->nameColumn) {
-                // dictionary[token] += 1;
-            }
+            if (index == headers->nameColumn)
+                name = token;
+        }
+
+        if (index == headers->nameColumn) {
+            fprintf(stderr, "name: %s\n", name);                                        // TODO: remove me later
+            // dictionary[name] += 1;
+            free(name);
         }
 
         index += 1;
-        token = strtok(NULL, ",");
+        end += 1;
+        start = end;
     }
 
     if (index != headers->size - 1) // less columns than headers
@@ -99,6 +143,7 @@ int parseBody(char* line, struct Headers* headers /*, Map* dictionary */) {
 
     return 0;
 }
+
 
 int main(int argc, char** argv) {
     char line[MAX_LINE_LENGTH];
@@ -120,7 +165,7 @@ int main(int argc, char** argv) {
                     printf("Invalid Input Format\n");
             }
 
-            // print result
+            // print result (top 10)
         }
     }
 
