@@ -137,31 +137,27 @@ int parseBody(char* line, struct Headers* headers /*, Map* dictionary */) {
 
         if (index == headers->nameColumn) {
             fprintf(stderr, "name: %s\n", name);                                        // TODO: remove me later
+            struct node *curr = head, *prev = NULL;
 
-            if (head == NULL) {
-                head = (struct node*)malloc(sizeof(struct node));
-                head->name = malloc(strlen(name));
-                strcpy(head->name, name);
-                head->length = 1;
-                head->next = NULL;
-            }
-            else if (strcmp(head->name, name) == 0) {
-                head->length += 1;
-            }
-            else {
-                struct node* curr = head->next;
-                struct node* prev = head;
-                int found = -1;
-                while (curr != NULL) {
-                    if (strcmp(curr->name, name) == 0) {
-                        curr->length += 1;
-                        found = 1;
-                        break;
-                    }
+            while (curr != NULL) {
+                if (strcmp(curr->name, name) == 0)
+                    break;
+                else {
                     prev = curr;
                     curr = curr->next;
                 }
-                if (found == -1) {
+            }
+
+            if (curr != NULL)
+                curr->length += 1;
+            else { // no node with name found in the linked list
+                if (prev == NULL) { // head is not initialized
+                    head = (struct node*)malloc(sizeof(struct node));
+                    head->name = malloc(strlen(name));
+                    strcpy(head->name, name);
+                    head->length = 1;
+                    head->next = NULL;
+                } else { // initialized a new tail node
                     curr = (struct node*)malloc(sizeof(struct node));
                     curr->length = 1;
                     prev->next = curr;
@@ -215,28 +211,32 @@ int main(int argc, char** argv) {
     else {
         fgets(line, MAX_LINE_LENGTH, inf);
 
-        if (parseHeaders(line, &headers) == -1)
+        if (parseHeaders(line, &headers) == -1){
             printf("Invalid Input Format\n");
+            return 0;
+        }
         else {
             while (fgets(line, MAX_LINE_LENGTH, inf)) {
-                if (parseBody(line, &headers) == -1)
+                if (parseBody(line, &headers) == -1){
                     printf("Invalid Input Format\n");
+                    return 0;
+                }
+            }
+            int count = 0;
+            struct node* headSort = NULL;
+            struct node* currentSort = head;
+            while (currentSort != NULL) {
+                struct node* nextSort = currentSort->next;
+                insertSort(&headSort, currentSort);
+                currentSort = nextSort;
             }
 
+            struct node* current = headSort;
 
-            // struct node* headSort = NULL;
-            // struct node* currentSort = head;
-            // while (currentSort != NULL) {
-            //     struct node* nextSort = currentSort->next;
-            //     insertSort(&headSort, currentSort);
-            //     currentSort = nextSort;
-            // }
-
-            struct node* current = head;
-
-            while (current != NULL){
+            while (current != NULL && count < 10){
                 printf("name: %s | length: %d\n", current-> name, current->length);
                 current = current->next;
+                count += 1;
             }
         }
     }
